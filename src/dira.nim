@@ -24,10 +24,13 @@ proc newProfile(set = false; profiles: seq[string]): int =
     if fileExists(dest):
       ee "profile already exists: " & prf
     elif open(f, dest, fmWrite):
+      defer: close f
       if set:
-        # todo: setup profile
-        discard
-      close f
+        ee "enter user.name for profile:"
+        let n = stdin.readLine()
+        ee "enter user.email for profile:"
+        let e = stdin.readLine()
+        f.writeLine "[user]\n\tname = " & n & "\n\temail = " & e
     else:
       ee "could not create profile: " & prf
 
