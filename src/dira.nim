@@ -28,14 +28,14 @@ proc newProfile(set = false; profiles: seq[string]): int =
     else:
       ee "could not create profile: " & prf
 
-proc clone(args: var seq[string]): int =
+proc clone(args: seq[string]): int =
   if args.len == 0 or args.len > 2:
     raise newException(HelpError, "command `clone` requires a destination profile or a source profile and destination profile")
   let
-    dest = cfgDir & "/" & args.pop() & ext
+    dest = cfgDir & "/" & args[^1] & ext
     src =
-      if args.len != 0:
-        cfgDir & "/" & args.pop() & ext
+      if args.len == 2:
+        cfgDir & "/" & args[0] & ext
       else:
         expandSymlink(cfgPath)
   if not fileExists(src):

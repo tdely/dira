@@ -57,32 +57,26 @@ suite "command tests":
       discard newProfile(false, @[])
 
   test "clone":
-    var x = @["one", "dup"]
-    check(cloneProfile(x) == 0)
+    check(clone(@["one", "dup"]) == 0)
     check(fileExists(cfgDir & "/dup" & ext))
     # todo: open one, write line, duplicate, open dup, verify line
 
   test "clone implicit src":
-    var x = @["dup"]
-    check(cloneProfile(x) == 0)
+    check(clone(@["dup"]) == 0)
     check(fileExists(cfgDir & "/dup" & ext))
     # todo: open current, write line, duplicate, open dup, verify line
 
   test "clone conflict":
-    var x = @["one", "two"]
-    check(cloneProfile(x) == 1)
+    check(clone(@["one", "two"]) == 1)
 
   test "clone src missing":
-    var x = @["miss", "dup"]
-    check(cloneProfile(x) == 1)
+    check(clone(@["miss", "dup"]) == 1)
 
   test "clone too few and too many args":
     expect HelpError:
-      var x: seq[string] = @[]
-      discard cloneProfile(x)
+      discard clone(@[])
     expect HelpError:
-      var x = @["a", "b", "c"]
-      discard cloneProfile(x)
+      discard clone(@["a", "b", "c"])
 
   test "remove":
     check(remove(true, @["one"]) == 0)
