@@ -12,12 +12,17 @@ var
 template ee(msg: string) =
   stderr.writeLine msg
 
+template prompt(msg: string, newline = true): string =
+  stderr.write msg & (if newline: "\n" else: " ")
+  stdin.readLine()
+
+template err(msg: string, code: int) =
+  ee msg
+  return code
+
 proc newProfile(set = false; profiles: seq[string]): int =
   if profiles.len == 0:
-    raise newException(
-      HelpError,
-      "command `new` requires one or more profile names"
-    )
+    err("command `new` requires one or more profile names", 1)
   var f: File
   for prf in profiles:
     let dest = cfgDir & "/" & prf & ext
@@ -26,20 +31,16 @@ proc newProfile(set = false; profiles: seq[string]): int =
     elif open(f, dest, fmWrite):
       defer: close f
       if set:
-        ee "enter user.name for profile:"
-        let n = stdin.readLine()
-        ee "enter user.email for profile:"
-        let e = stdin.readLine()
+        let
+          n = prompt "enter user.name for profile:"
+          e = prompt "enter user.email for profile:"
         f.writeLine "[user]\n\tname = " & n & "\n\temail = " & e
     else:
       ee "could not create profile: " & prf
 
 proc clone(args: seq[string]): int =
   if args.len == 0 or args.len > 2:
-    raise newException(
-      HelpError,
-      "command `clone` requires a destination profile or a source profile and destination profile"
-    )
+    err("command `clone` requires a destination profile or a source profile and destination profile", 1)
   let
     dest = cfgDir & "/" & args[^1] & ext
     src =
@@ -48,11 +49,9 @@ proc clone(args: seq[string]): int =
       else:
         expandSymlink(cfgPath)
   if not fileExists(src):
-    ee "source profile not found"
-    result = 1
+    err("source profile not found", 1)
   elif fileExists(dest):
-    ee "destination profile already exists"
-    result = 1
+    err("destination profile already exists", 1)
   else:
     try:
       copyFile(src, dest)
@@ -61,20 +60,16 @@ proc clone(args: seq[string]): int =
 
 proc become(profile: seq[string]): int =
   if profile.len != 1:
-    raise newException(HelpError, "command `become` requires one profile")
+    err("command `become` requires one profile", 1)
   let src = cfgDir & "/" & profile[0] & ext
   if not fileExists(src):
-    ee "no such profile: " & profile[0]
-    return 1
+    err("no such profile: " & profile[0], 1)
   removeFile(cfgPath)
   createSymlink(src, cfgPath)
 
 proc remove(force = false; profiles: seq[string]): int =
   if profiles.len == 0:
-    raise newException(
-      HelpError,
-      "command `remove` requires one or more profile names"
-    )
+    err("command `remove` requires one or more profile names", 1)
   for prf in profiles:
     let dest = cfgDir & "/" & prf & ext
     if dest == expandSymlink(cfgPath):
@@ -82,9 +77,7 @@ proc remove(force = false; profiles: seq[string]): int =
       result = 1
       continue
     if not force:
-      ee "removing profile '" & prf & "', continue? [y/N]"
-      let confirm = readLine stdin
-      case confirm
+      case prompt("removing profile '" & prf & "', continue? [y/N]", false)
       of "y", "Y":
         discard
       else:
@@ -144,29 +137,27 @@ proc checkProfile(input: seq[string] = @[]): bool =
   ## profile if possible.
   let info = getFileInfo(cfgPath, false)
   if info.kind == pcFile:
-    ee "a git config already exists, do you want to convert it to a dira profile? [y/N]"
     when not defined(release):
       let confirm =
         if input.len > 0:
           input[0]
         else:
-          readLine stdin
+          prompt("a git config already exists, do you want to convert it to a dira profile? [y/N]", false)
     else:
-      let confirm = readLine stdin
+      let confirm = prompt("a git config already exists, do you want to convert it to a dira profile? [y/N]", false)
     case confirm
     of "y", "Y":
       discard
     else:
       return false
-    ee "enter name for the new profile: "
     when not defined(release):
       let prf =
         if input.len > 1:
           input[1]
         else:
-          readLine stdin
+          prompt "enter name for the new profile:"
     else:
-      let prf = readLine stdin
+      let prf = prompt "enter name for the new profile:"
     for c in illegalChars:
       if c in prf:
         ee "profile name cannot contain '" & illegalChars.join("', '") & "'"
@@ -227,7 +218,7 @@ $$subcmds""" % [progName]
       usage=subCmdUsage("new", "profiles..."),
       doc="Create a new profile.",
       help={
-        "set": "set git config options for the profile on after creation"
+        "set": "set git config options for the profile after creation"
       },
       cf=clCfg
     ],
