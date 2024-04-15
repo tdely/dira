@@ -96,8 +96,10 @@ proc status(verbose = false): int =
   let current = expandSymlink(cfgPath)
   echo "profile: " & splitFile(current).name
   if verbose:
+    echo "symlink: " & cfgPath
     var f: File
     if open(f, current, fmRead):
+      echo "source: " & current
       var line: string
       while f.readLine(line):
         echo "  " & line
@@ -255,7 +257,7 @@ $$subcmds""" % [progName]
       usage=subCmdUsage("status", ""),
       doc="Show current profile and mask.",
       help={
-        "verbose": "print profile config, if in repository includes .git/config",
+        "verbose": "print setup details and current config",
       },
       cf=clCfg
     ],
