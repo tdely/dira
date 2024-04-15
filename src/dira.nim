@@ -28,7 +28,7 @@ proc newProfile(set = false; profiles: seq[string]): int =
     else:
       ee "could not create profile: " & prf
 
-proc cloneProfile(args: var seq[string]): int =
+proc clone(args: var seq[string]): int =
   if args.len == 0 or args.len > 2:
     raise newException(HelpError, "command `clone` requires a destination profile or a source profile and destination profile")
   let
@@ -220,19 +220,19 @@ $$subcmds""" % [progName]
       cf=clCfg
     ],
     [
-      newProfile, cmdName="clone",
+      clone,
       usage=subCmdUsage("clone", "[src] dest"),
       doc="Clone profile.",
       cf=clCfg
     ],
     [
-      newProfile, cmdName="become",
+      become,
       usage=subCmdUsage("become", "profile"),
       doc="Switch profile.",
       cf=clCfg
     ],
     [
-      newProfile, cmdName="remove",
+      remove,
       usage=subCmdUsage("remove", "profile..."),
       doc="Permanently remove profile.",
       help={
@@ -241,18 +241,18 @@ $$subcmds""" % [progName]
       cf=clCfg
     ],
     [
-      newProfile, cmdName="status",
+      status,
       usage=subCmdUsage("status", ""),
       doc="Show current profile and mask.",
-      cf=clCfg
-    ],
-    [
-      newProfile, cmdName="list",
-      usage=subCmdUsage("list", ""),
-      doc="List available profiles.",
       help={
         "verbose": "print profile config, if in repository includes .git/config",
       },
+      cf=clCfg
+    ],
+    [
+      list,
+      usage=subCmdUsage("list", ""),
+      doc="List available profiles.",
       cf=clCfg
     ],
   )
