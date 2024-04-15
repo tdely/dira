@@ -72,6 +72,8 @@ proc remove(force = false; profiles: seq[string]): int =
     err("command `remove` requires one or more profile names", 1)
   for prf in profiles:
     let dest = cfgDir & "/" & prf & ext
+    if not fileExists(dest):
+      continue
     if dest == expandSymlink(cfgPath):
       ee "cannot remove profile in use"
       result = 1
