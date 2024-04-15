@@ -1,5 +1,5 @@
-import std / [strformat, strutils,  os]
-from cligen import HelpError
+import std / [strutils, os]
+import cligen
 
 const
   ext = ".prf"
@@ -14,7 +14,10 @@ template ee(msg: string) =
 
 proc newProfile(set = false; profiles: seq[string]): int =
   if profiles.len == 0:
-    raise newException(HelpError, "command `new` requires one or more profile names")
+    raise newException(
+      HelpError,
+      "command `new` requires one or more profile names"
+    )
   var f: File
   for prf in profiles:
     let dest = cfgDir & "/" & prf & ext
@@ -30,7 +33,10 @@ proc newProfile(set = false; profiles: seq[string]): int =
 
 proc clone(args: seq[string]): int =
   if args.len == 0 or args.len > 2:
-    raise newException(HelpError, "command `clone` requires a destination profile or a source profile and destination profile")
+    raise newException(
+      HelpError,
+      "command `clone` requires a destination profile or a source profile and destination profile"
+    )
   let
     dest = cfgDir & "/" & args[^1] & ext
     src =
@@ -62,7 +68,10 @@ proc become(profile: seq[string]): int =
 
 proc remove(force = false; profiles: seq[string]): int =
   if profiles.len == 0:
-    raise newException(HelpError, "command `remove` requires one or more profile names")
+    raise newException(
+      HelpError,
+      "command `remove` requires one or more profile names"
+    )
   for prf in profiles:
     let dest = cfgDir & "/" & prf & ext
     if dest == expandSymlink(cfgPath):
@@ -177,8 +186,6 @@ proc checkProfile(input: seq[string] = @[]): bool =
     ee "git config is a directory"
 
 when isMainModule:
-  import cligen
-
   if not setCfgDir():
     ee "config directory does not exists and could not be created: " & cfgDir
     ee "does parent directory " & parentDir(cfgDir) & " exist?"
