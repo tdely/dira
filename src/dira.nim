@@ -103,18 +103,18 @@ proc status(verbose = false): int =
     echo "symlink: " & cfgPath
     var f: File
     if open(f, current, fmRead):
+      defer: close f
       echo "source: " & current
       var line: string
       while f.readLine(line):
         echo "  " & line
-    close f
     if fileExists(".git/config"):
       echo "\nrepository .git/config:"
       if open(f, ".git/config", fmRead):
+        defer: close f
         var line: string
         while f.readLine(line):
           echo "  " & line
-      close f
 
 proc list(): int =
   let current = expandSymlink(cfgPath)
