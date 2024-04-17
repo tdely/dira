@@ -96,6 +96,23 @@ proc remove(force = false; profiles: seq[string]): int =
         continue
     removeFile(dest)
 
+proc show(profile: seq[string]): int =
+  if profile.len > 1:
+    err("command `show` accepts at most one profile", 1)
+  let prf =
+    if profile.len == 0:
+      expandSymlink(cfgPath)
+    else:
+      cfgDir & "/" & profile[0] & ext
+  var f: File
+  if open(f, prf, fmRead):
+    defer: close f
+    var line: string
+    while f.readLine(line):
+      echo line
+  else:
+    err("failed to open profile, are you sure it exists?", 1)
+
 proc status(verbose = false): int =
   let current = expandSymlink(cfgPath)
   echo "profile: " & splitFile(current).name
@@ -252,6 +269,12 @@ $$subcmds""" % [progName]
       help={
         "force": "do not ask for confirmation",
       },
+      cf=clCfg
+    ],
+    [
+      show,
+      usage=subCmdUsage("show", "[profile]"),
+      doc="Show profile config.",
       cf=clCfg
     ],
     [
