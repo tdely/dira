@@ -12,8 +12,8 @@ var
 template ee(msg: string) =
   stderr.writeLine msg
 
-template prompt(msg: string, newline = true): string =
-  stderr.write msg & (if newline: "\n" else: " ")
+template prompt(msg: string): string =
+  stderr.write msg & " "
   stdin.readLine()
 
 template err(msg: string, code: int) =
@@ -23,20 +23,29 @@ template err(msg: string, code: int) =
 proc newProfile(set = false; profiles: seq[string]): int =
   if profiles.len == 0:
     err("command `new` requires one or more profile names", 1)
-  var f: File
+  var
+    f: File
+    cfg: string
   for prf in profiles:
     let dest = cfgDir & "/" & prf & ext
     if fileExists(dest):
       ee "profile already exists: " & prf
-    elif open(f, dest, fmWrite):
+      continue
+    if set:
+      ee "setting up profile, leave empty to skip"
+      for x in [(section: "user", keys: @["name", "email"]), (section: "core", keys: @["editor"])]:
+        cfg.add "[" & x.section & "]\n"
+        for key in x.keys:
+          let val = prompt x.section & "." & key & ":"
+          if val.len > 0:
+            cfg.add "\t" & key & " = " & val & "\n"
+
+    if open(f, dest, fmWrite):
       defer: close f
       if set:
-        let
-          n = prompt "enter user.name for profile:"
-          e = prompt "enter user.email for profile:"
-        f.writeLine "[user]\n\tname = " & n & "\n\temail = " & e
+        f.write cfg
     else:
-      ee "could not create profile: " & prf
+      err("could not create profile: " & prf, 1)
 
 proc clone(args: seq[string]): int =
   if args.len == 0 or args.len > 2:
@@ -79,7 +88,7 @@ proc remove(force = false; profiles: seq[string]): int =
       result = 1
       continue
     if not force:
-      case prompt("removing profile '" & prf & "', continue? [y/N]", false)
+      case prompt "removing profile '" & prf & "', continue? [y/N]"
       of "y", "Y":
         discard
       else:
@@ -144,9 +153,9 @@ proc checkProfile(input: seq[string] = @[]): bool =
         if input.len > 0:
           input[0]
         else:
-          prompt("a git config already exists, do you want to convert it to a dira profile? [y/N]", false)
+          prompt "a git config already exists, do you want to convert it to a dira profile? [y/N]"
     else:
-      let confirm = prompt("a git config already exists, do you want to convert it to a dira profile? [y/N]", false)
+      let confirm = prompt "a git config already exists, do you want to convert it to a dira profile? [y/N]"
     case confirm
     of "y", "Y":
       discard
