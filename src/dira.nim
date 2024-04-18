@@ -89,6 +89,24 @@ proc become(profile: seq[string]): int =
   removeFile(cfgPath)
   createSymlink(src, cfgPath)
 
+proc rename(profiles: seq[string]): int =
+  if profiles.len != 2:
+    err("command `rename` requires a source and destination profile", 1)
+  let
+    src = cfgDir & "/" & profiles[0] & ext
+    dest = cfgDir & "/" & profiles[1] & ext
+  if not fileExists(src):
+    err("no such profile: " & profiles[0], 1)
+  elif fileExists(dest) or dirExists(dest):
+    err("profile could not be renamed, name already in use", 1)
+  moveFile(src, dest)
+  try:
+    if src == expandSymlink(cfgPath):
+      removeFile(cfgPath)
+      createSymlink(dest, cfgPath)
+  except OSError:
+    discard
+
 proc remove(force = false; profiles: seq[string]): int =
   if profiles.len == 0:
     err("command `remove` requires one or more profile names", 1)
@@ -291,6 +309,12 @@ $$subcmds""" % [progName]
       become,
       usage=subCmdUsage("become", "profile"),
       doc="Switch profile.",
+      cf=clCfg
+    ],
+    [
+      rename,
+      usage=subCmdUsage("rename", "src dest"),
+      doc="Rename profile.",
       cf=clCfg
     ],
     [
