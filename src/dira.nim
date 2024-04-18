@@ -56,7 +56,10 @@ proc clone(args: seq[string]): int =
       if args.len == 2:
         cfgDir & "/" & args[0] & ext
       else:
-        expandSymlink(cfgPath)
+        try:
+          expandSymlink(cfgPath)
+        except OSError:
+          err("could not determine active profile", 1)
   if not fileExists(src):
     err("source profile not found", 1)
   elif fileExists(dest):
@@ -83,10 +86,13 @@ proc remove(force = false; profiles: seq[string]): int =
     let dest = cfgDir & "/" & prf & ext
     if not fileExists(dest):
       continue
-    if dest == expandSymlink(cfgPath):
-      ee "cannot remove profile in use"
-      result = 1
-      continue
+    try:
+      if dest == expandSymlink(cfgPath):
+        ee "cannot remove profile in use"
+        result = 1
+        continue
+    except OSError:
+      discard
     if not force:
       case prompt "removing profile '" & prf & "', continue? [y/N]"
       of "y", "Y":
@@ -101,7 +107,10 @@ proc show(profile: seq[string]): int =
     err("command `show` accepts at most one profile", 1)
   let prf =
     if profile.len == 0:
-      expandSymlink(cfgPath)
+      try:
+        expandSymlink(cfgPath)
+      except OSError:
+        err("could not determine active profile", 1)
     else:
       cfgDir & "/" & profile[0] & ext
   var f: File
@@ -114,7 +123,11 @@ proc show(profile: seq[string]): int =
     err("failed to open profile, are you sure it exists?", 1)
 
 proc status(verbose = false): int =
-  let current = expandSymlink(cfgPath)
+  var current: string
+  try:
+    current = expandSymlink(cfgPath)
+  except OSError:
+    err("could not determine active profile", 1)
   echo "profile: " & splitFile(current).name
   if verbose:
     echo "symlink: " & cfgPath
@@ -134,7 +147,11 @@ proc status(verbose = false): int =
           echo "  " & line
 
 proc list(): int =
-  let current = expandSymlink(cfgPath)
+  let current =
+    try:
+      expandSymlink(cfgPath)
+    except OSError:
+      ""
   for f in walkDir(cfgDir, skipSpecial = true):
     if f.path.endsWith(ext):
       echo (if current == f.path:
