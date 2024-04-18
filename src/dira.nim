@@ -160,12 +160,12 @@ proc status(verbose = false): int =
   except OSError:
     err("could not determine active profile", 1)
   echo "profile: " & splitFile(current).name
+  echo "symlink: " & cfgPath
+  echo "source: " & current
   if verbose:
-    echo "symlink: " & cfgPath
     var f: File
     if open(f, current, fmRead):
       defer: close f
-      echo "source: " & current
       var line: string
       while f.readLine(line):
         echo "  " & line
@@ -338,9 +338,9 @@ $$subcmds""" % [progName]
     [
       status,
       usage=subCmdUsage("status", ""),
-      doc="Show current profile.",
+      doc="Show current profile details.",
       help={
-        "verbose": "print setup details and current config",
+        "verbose": "print config of current profile and repository if available",
       },
       cf=clCfg
     ],
