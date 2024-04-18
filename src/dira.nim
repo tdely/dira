@@ -44,6 +44,7 @@ proc newProfile(become = false; set = false; profiles: seq[string]): int =
       defer: close f
       if set:
         f.write cfg
+      echo "new profile created at " & dest
     else:
       err("could not create profile: " & prf, 1)
   if become:
@@ -56,7 +57,7 @@ proc newProfile(become = false; set = false; profiles: seq[string]): int =
 
 proc clone(become = false; args: seq[string]): int =
   if args.len == 0 or args.len > 2:
-    err("command `clone` requires a destination profile or a source profile and destination profile", 1)
+    err("command `clone` requires a destination profile or a source and destination profile", 1)
   let
     dest = cfgDir & "/" & args[^1] & ext
     src =
@@ -74,15 +75,17 @@ proc clone(become = false; args: seq[string]): int =
   else:
     try:
       copyFile(src, dest)
+      echo "profile cloned to " & dest
       if become:
         removeFile(cfgPath)
         createSymlink(dest, cfgPath)
+        echo "active profile is now " & args[^1]
     except Exception as e:
-      ee "failed to clone profile: " & e.msg
+      ee "could not clone profile: " & e.msg
 
 proc become(profile: seq[string]): int =
   if profile.len != 1:
-    err("command `become` requires one profile", 1)
+    err("command `become` requires exactly one profile name", 1)
   let src = cfgDir & "/" & profile[0] & ext
   if not fileExists(src):
     err("no such profile: " & profile[0], 1)
@@ -132,7 +135,7 @@ proc remove(force = false; profiles: seq[string]): int =
 
 proc show(profile: seq[string]): int =
   if profile.len > 1:
-    err("command `show` accepts at most one profile", 1)
+    err("command `show` accepts at most one profile name", 1)
   let prf =
     if profile.len == 0:
       try:
