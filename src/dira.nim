@@ -20,7 +20,7 @@ template err(msg: string, code: int) =
   ee msg
   return code
 
-proc newProfile(set = false; profiles: seq[string]): int =
+proc newProfile(become = false; set = false; profiles: seq[string]): int =
   if profiles.len == 0:
     err("command `new` requires one or more profile names", 1)
   var
@@ -46,8 +46,15 @@ proc newProfile(set = false; profiles: seq[string]): int =
         f.write cfg
     else:
       err("could not create profile: " & prf, 1)
+  if become:
+    if profiles.len > 1:
+      ee "more than one profile was created, ignoring --become"
+    else:
+      removeFile(cfgPath)
+      createSymlink(cfgDir & "/" & profiles[0] & ext, cfgPath)
+      echo "active profile is now " & profiles[0]
 
-proc clone(args: seq[string]): int =
+proc clone(become = false; args: seq[string]): int =
   if args.len == 0 or args.len > 2:
     err("command `clone` requires a destination profile or a source profile and destination profile", 1)
   let
@@ -67,6 +74,9 @@ proc clone(args: seq[string]): int =
   else:
     try:
       copyFile(src, dest)
+      if become:
+        removeFile(cfgPath)
+        createSymlink(dest, cfgPath)
     except Exception as e:
       ee "failed to clone profile: " & e.msg
 
@@ -263,6 +273,7 @@ $$subcmds""" % [progName]
       usage=subCmdUsage("new", "profiles..."),
       doc="Create a new profile.",
       help={
+        "become": "switch to new profile, ignored if multiple profiles given",
         "set": "set git config options for the profile after creation"
       },
       cf=clCfg
@@ -271,6 +282,9 @@ $$subcmds""" % [progName]
       clone,
       usage=subCmdUsage("clone", "[src] dest"),
       doc="Clone profile.",
+      help={
+        "become": "switch to new profile",
+      },
       cf=clCfg
     ],
     [
