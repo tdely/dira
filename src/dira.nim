@@ -338,7 +338,7 @@ $$subcmds""" % [progName]
     [
       status,
       usage=subCmdUsage("status", ""),
-      doc="Show current profile and mask.",
+      doc="Show current profile.",
       help={
         "verbose": "print setup details and current config",
       },
