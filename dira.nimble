@@ -11,4 +11,4 @@ bin           = @["dira"]
 # Dependencies
 
 requires "nim >= 2.0.2"
-requires "cligen"
+requires "cligen >= 1.7"
