@@ -203,10 +203,11 @@ proc setCfgDir(): bool =
 
 proc setCfgPath() =
   cfgPath =
-    if fileExists(getEnv("HOME") & "/.gitconfig"):
-      getEnv("HOME") & "/.gitconfig"
-    else:
+    if not fileExists(getEnv("HOME") & "/.gitconfig") and
+        fileExists(getEnv("XDG_CONFIG_HOME") & "/git/config"):
       getEnv("XDG_CONFIG_HOME") & "/git/config"
+    else:
+      getEnv("HOME") & "/.gitconfig"
 
 proc checkProfile(input: seq[string] = @[]): bool =
   ## Check that config file is a symlink we control or offer to convert to
@@ -264,8 +265,9 @@ when isMainModule:
     quit(1)
   setCfgPath()
 
-  if not checkProfile():
-    quit(1)
+  if fileExists(cfgPath):
+    if not checkProfile():
+      quit(1)
 
   const
     progName = "dira"
